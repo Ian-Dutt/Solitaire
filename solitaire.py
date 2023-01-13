@@ -30,6 +30,7 @@ class Card:
         self.pos = pos
         self.suit = suit
         self.value = value if isinstance(value, int) else face_card.get(value)
+        self.seen = False
 
     def __repr__(self) -> str:
         return f'{self.value} of {self.suit}\'s'
@@ -59,9 +60,32 @@ def shuffle_deck(deck):
             [deck.pop(0), deck.pop(0), deck.pop(0), deck.pop(0), deck.pop(0)],
             [deck.pop(0), deck.pop(0), deck.pop(0), deck.pop(0), deck.pop(0), deck.pop(0)],
             [deck.pop(0), deck.pop(0), deck.pop(0), deck.pop(0), deck.pop(0), deck.pop(0), deck.pop(0)],
-            [deck.pop(0), deck.pop(0), deck.pop(0), deck.pop(0), deck.pop(0), deck.pop(0), deck.pop(0), deck.pop(0)],
             deck)
 
+def is_card(pos, card):
+    return pos[0] < card.pos[0] + CARD_WIDTH and pos[0] > card.pos[0] and card.pos[1] < pos[1] + CARD_HEIGHT and card.pos[1] > pos[1]
+
+def is_on_card(win, pos, stacks):
+    if win.get_at(pos) == pg.Color(GREEN): return None
+    print('1')
+    if pos[0] > 7.875*CARD_WIDTH + 15: return None
+    print('  2')
+    index = 0
+    offset = 0
+    check = 0
+    for i in range(8):
+        check = offset*CARD_WIDTH + 15
+        if pos[0] < check:
+            break
+    
+        index = i
+        offset += 1.125
+
+    if pos[1] > DISTANCE_FROM_TOP:
+        return index
+    
+    print('    3')
+    return None
 
 
 def show_deck(win):
@@ -79,13 +103,16 @@ def show_revealed(win, revealed):
             pg.draw.rect(WIN, BLACK, pg.Rect(pos, (CARD_WIDTH, CARD_HEIGHT)), 2)
 
 def show_stack(win, stack, offset):
+    if not stack: return
+    
+    stack[-1].seen = True
     l = len(stack)
     for i in range(l):
         pos = (offset*CARD_WIDTH + 15,i*20 + DISTANCE_FROM_TOP)
-        if i < l - 1:
+        if not stack[i].seen:
             win.blit(CARD_BACK, pos)
         else:
-            win.blit(stack[-1].pic, pos)
+            win.blit(stack[i].pic, pos)
         pg.draw.rect(WIN, BLACK, pg.Rect(pos, (CARD_WIDTH, CARD_HEIGHT)), 2)
 
 
@@ -98,17 +125,21 @@ def blit_background(win, stacks, revealed):
     show_revealed(win, revealed)
 
 
-def move_card(win, pos, stacks, index, revealed):
-    card = stacks[index][-1]
+def get_card(win, pos, stacks, index, revealed):
+    if stacks[index]:
+        card = stacks[index].pop(-1)
+        card.seen = True
+        return card
+    return None
 
+def move_card(win, pos, card, stacks, revealed):
     blit_background(win, stacks, revealed)
 
     win.blit(card.pic, (pos[0] - 37, pos[1] - 67))
+    card.pos = pos
+    card.seen = True
     pg.display.update()
     return card.pos
-
-
-
 
 
 def main(WIDTH, HEIGHT, WIN):
@@ -119,7 +150,8 @@ def main(WIDTH, HEIGHT, WIN):
     revealed = [stacks[0][0], stacks[1][1], stacks[2][2], stacks[3][3]]
     blit_background(WIN, stacks, revealed)
 
-    clicked = None
+    card = None
+    index = None
     while True:
         
         pg.time.delay(50)
@@ -129,17 +161,31 @@ def main(WIDTH, HEIGHT, WIN):
                 sys.exit()
 
             if pg.mouse.get_pressed()[0]:
+                mouse_position = pg.mouse.get_pos()
                 try:
                     # move_card(WIN, pg.mouse.get_pos(), stacks, 1)
-                    
-                    clicked = (pg.mouse.get_pos())
-                    print(clicked)
+                    if not card:
+                        index = is_on_card(WIN, mouse_position, stacks)
+
+                        if index:
+                            card = get_card(WIN, mouse_position, stacks, index, revealed)
+                    else:
+                        move_card(WIN, mouse_position, card, stacks, revealed)
+
                 except AttributeError:
                     pass
             if not pg.mouse.get_pressed()[0]:
-                
-                clicked = None
-                print(clicked)
+                if card:
+                    new_index = is_on_card(WIN, card.pos, stacks)
+                    print(new_index)
+                    if new_index:
+                        stacks[new_index].append(card)
+                        blit_background(WIN, stacks, revealed)
+                        card = None
+                        print(stacks[4])
+                    else:
+                        print('Cant drop card there')
+
 
         pg.display.update()
 main(WIDTH, HEIGHT, WIN)

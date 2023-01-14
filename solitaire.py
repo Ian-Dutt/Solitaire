@@ -87,13 +87,18 @@ def is_on_card_row(win, pos, stacks):
         offset += 1.125
     
     if pos[1] > DISTANCE_FROM_TOP:
-        from_top = pos[1] - DISTANCE_FROM_TOP
-        num_cards = len(stacks[index]) + 1
+        from_top = pos[1] - DISTANCE_FROM_TOP - 25
+        num_cards = 0
+
         for i in range(len(stacks[index])):
-            if from_top < i*25:
-                break
-            num_cards -= 1
-        # print('Distance from top:', num_cards)
+            if i == len(stacks[index]) - 1:
+                num_cards += 1
+            elif stacks[index][i].seen:
+                print(from_top, i)
+                if from_top < 25 * (i):
+                    if from_top < 25 * (i-1): return None, 0
+                    num_cards += 1
+
         return index, num_cards
 
     return None, 0
@@ -116,6 +121,8 @@ def show_revealed(win, revealed):
             pg.draw.rect(WIN, BLACK, pg.Rect(pos, (CARD_WIDTH, CARD_HEIGHT)), 2)
         except IndexError:
             break
+
+
 def show_stack(win, stack, offset):
     if not stack: return
 
@@ -129,10 +136,12 @@ def show_stack(win, stack, offset):
             win.blit(stack[i].pic, pos)
         pg.draw.rect(WIN, BLACK, pg.Rect(pos, (CARD_WIDTH, CARD_HEIGHT)), 2)
 
+
 def can_place_card(to_add, stack_top):
     if stack_top == []: 
         return to_add.value == 13
-    return to_add.suit != stack_top.suit and to_add.value == stack_top.value - 1
+    return is_red(to_add.suit) != is_red(stack_top.suit) and to_add.value == stack_top.value - 1
+
 
 def blit_background(win, stacks, revealed, deck):
     win.fill(GREEN)
@@ -148,10 +157,12 @@ def get_cards(stacks, index, num):
         cards = []
 
         for i in range(-num, 0):
+            print(i)
             cards.append(stacks[index].pop(i))
             # card.seen = True
         return cards
     return None
+
 
 def add_cards(l, to_add):
         l.extend(to_add)
@@ -166,6 +177,7 @@ def move_card(win, pos, card, stacks, revealed, deck):
     pg.display.update()
     return card.pos
 
+
 def move_cards(win, pos, cards, stacks, revealed, deck):
     blit_background(win, stacks, revealed, deck)
 
@@ -177,6 +189,7 @@ def move_cards(win, pos, cards, stacks, revealed, deck):
     pg.display.update()
     return None
 
+
 def move(win, pos, cards, stacks, revealed, deck):
     if len(cards) > 1:
         return move_cards(win, pos, cards, stacks, revealed, deck)
@@ -187,8 +200,8 @@ def move(win, pos, cards, stacks, revealed, deck):
 ### TODO MAKE IT SO WHEN THE DECK IS CLICKED ON IT FLIPS OVER THREE CARDS
 
 def between(pos, upperx, uppery, lowerx, lowery):
-    print(pos, upperx, lowerx, uppery, lowery)
     return pos[1] < lowery and pos[1] > uppery and pos[0] < lowerx and pos[0] > upperx
+
 
 def choose_action(pos):
     if between(pos, (WIDTH - 15 - CARD_WIDTH), DISTANCE_FROM_TOP, (WIDTH - 15), (DISTANCE_FROM_TOP + CARD_HEIGHT)):
@@ -200,6 +213,8 @@ def choose_action(pos):
     # elif between(pos, )
     else:
         return None
+
+
 def main(WIDTH, HEIGHT, WIN):
     deck = DECK
     stacks = shuffle_deck(deck)
@@ -207,6 +222,7 @@ def main(WIDTH, HEIGHT, WIN):
     for i in range(len(stacks) - 1):   
         stacks[i][-1].seen = True
     revealed = []
+    deck.pop(-1)
     blit_background(WIN, stacks, revealed, deck)
     card = None
     index = None
@@ -224,17 +240,19 @@ def main(WIDTH, HEIGHT, WIN):
                 mouse_position = pg.mouse.get_pos()
 
                 try:
-                    match choose_action(mouse_position):
-                        case 'stacks':
+                    action = choose_action(mouse_position)
+                    if action == 'stacks' or card:
+                        if not card:
                             index, num = is_on_card_row(WIN, mouse_position, stacks)
-
                             if index is not None:
                                 card = get_cards(stacks, index, num)
                                 move(WIN, mouse_position, card, stacks, revealed, deck)
-                        case 'deck':
-                            flip_cards = True
-                        case 'revealed':
-                            print('Hey there')
+                        else:
+                            move(WIN, mouse_position, card, stacks, revealed, deck)
+                    elif action == 'deck':    
+                        flip_cards = True
+                    elif action == 'revealed':
+                        print('Hey there')
 
                 except AttributeError:
                     pass
@@ -252,7 +270,6 @@ def main(WIDTH, HEIGHT, WIN):
                     flip_cards = False
                 elif card:
                     new_index, _ = is_on_card_row(WIN, card[0].pos, stacks)
-                    print(new_index)
                     try:
                         stack_top = stacks[new_index][-1]
                     except Exception:
@@ -267,7 +284,7 @@ def main(WIDTH, HEIGHT, WIN):
                             add_cards(stacks[new_index], card)
                             blit_background(WIN, stacks, revealed, deck)
                             card = None
-                            print(f'Placed card in stack {index + 1}')
+                            print(f'Placed card in stack {new_index + 1}')
                         else:
                             add_cards(stacks[index], card)
                             card = None

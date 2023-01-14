@@ -183,8 +183,8 @@ def move(win, pos, cards, stacks, revealed):
 
 
 def main(WIDTH, HEIGHT, WIN):
-    # stacks = shuffle_deck(deck)
-    stacks = [[spades[11]],[spades[0]],[spades[1]],[spades[12]], [hearts[0]], [spades[1]], []]
+    stacks = shuffle_deck(deck)
+    # stacks = [[spades[11]],[spades[0]],[spades[1]],[spades[12]], [hearts[0]], [spades[1]], []]
     for i in range(len(stacks) - 1):   
         stacks[i][-1].seen = True
     revealed = []

@@ -18,7 +18,6 @@ face_card = {
     'king' : 13,
     'queen' : 12,
     'jack' : 11,
-    'Ace' : 14,
 }
 
 def is_red(suit):
@@ -41,12 +40,15 @@ diamonds = [Card(f'Cards\\{i}_of_diamonds.png', 'diamond', i) for i in range(2, 
 clubs = [Card(f'Cards\\{i}_of_clubs.png', 'club', i) for i in range(2, 11)]
 pg.display.set_caption('Solitaire')
 
-for i in range(11,15):
+for i in range(11,14):
     spades.append(Card(f'Cards\\{list(face_card.keys())[list(face_card.values()).index(i)]}_of_spades.png', 'spade', i))
     diamonds.append(Card(f'Cards\\{list(face_card.keys())[list(face_card.values()).index(i)]}_of_diamonds.png', 'diamond', i))
     hearts.append(Card(f'Cards\\{list(face_card.keys())[list(face_card.values()).index(i)]}_of_hearts.png', 'heart', i))
     clubs.append(Card(f'Cards\\{list(face_card.keys())[list(face_card.values()).index(i)]}_of_clubs.png', 'club', i))
-
+spades.append(Card(f'Cards\\ace_of_spades.png', 'spade', 1))
+hearts.append(Card(f'Cards\\ace_of_hearts.png', 'hearts', 1))
+diamonds.append(Card(f'Cards\\ace_of_diamonds.png', 'diamonds', 1))
+clubs.append(Card(f'Cards\\ace_of_clubs.png', 'clubs', 1))
 WIN.fill(GREEN)
 
 deck = spades + hearts + diamonds + clubs
@@ -65,10 +67,14 @@ def shuffle_deck(deck):
 def is_card(pos, card):
     return pos[0] < card.pos[0] + CARD_WIDTH and pos[0] > card.pos[0] and card.pos[1] < pos[1] + CARD_HEIGHT and card.pos[1] > pos[1]
 
-def is_on_card(win, pos, stacks):
-    if win.get_at(pos) == pg.Color(GREEN): return None
+
+# This checks if the given position is on one of the cards in the 7 piles
+# It returns the index of the stack and the number of cards that are going to be moved
+
+def is_on_card_row(win, pos, stacks):
+    if win.get_at(pos) == pg.Color(GREEN): return None, 0
     print('1')
-    if pos[0] > 7.875*CARD_WIDTH + 15: return None
+    if pos[0] > 7.875*CARD_WIDTH + 15: return None, 0
     print('  2')
     index = 0
     offset = 0
@@ -80,12 +86,18 @@ def is_on_card(win, pos, stacks):
     
         index = i
         offset += 1.125
-
-    if pos[1] > DISTANCE_FROM_TOP:
-        return index
     
-    print('    3')
-    return None
+    if pos[1] > DISTANCE_FROM_TOP:
+        from_top = pos[1] - DISTANCE_FROM_TOP
+        num_cards = len(stacks[index]) + 1
+        for i in range(len(stacks[index])):
+            if from_top < i*25:
+                break
+            num_cards -= 1
+        # print('Distance from top:', num_cards)
+        return index, num_cards
+    print('   3')
+    return None, 0
 
 
 def show_deck(win):
@@ -95,61 +107,88 @@ def show_deck(win):
 
 
 def show_revealed(win, revealed):
-    rev = revealed[::-1]
+
     for i in range(len(revealed)):
         if(i < 3):
-            pos = (WIDTH - 2.5* CARD_WIDTH - 30*i, DISTANCE_FROM_TOP)
+            pos = (WIDTH - 2.5* CARD_WIDTH - 20*i, DISTANCE_FROM_TOP)
             win.blit(revealed[i].pic, pos)
             pg.draw.rect(WIN, BLACK, pg.Rect(pos, (CARD_WIDTH, CARD_HEIGHT)), 2)
 
 def show_stack(win, stack, offset):
     if not stack: return
-    
-    stack[-1].seen = True
+
     l = len(stack)
     for i in range(l):
-        pos = (offset*CARD_WIDTH + 15,i*20 + DISTANCE_FROM_TOP)
+        pos = (offset*CARD_WIDTH + 15,i*25 + DISTANCE_FROM_TOP)
+
         if not stack[i].seen:
             win.blit(CARD_BACK, pos)
         else:
             win.blit(stack[i].pic, pos)
         pg.draw.rect(WIN, BLACK, pg.Rect(pos, (CARD_WIDTH, CARD_HEIGHT)), 2)
 
-
+def can_place_card(to_add, stack_top):
+    if stack_top == []: 
+        return to_add.value == 13
+    return to_add.suit != stack_top.suit and to_add.value == stack_top.value - 1
 
 def blit_background(win, stacks, revealed):
     win.fill(GREEN)
     for i in range(len(stacks) - 1):
+
         show_stack(win, stacks[i], i*1.125)
     show_deck(win)
     show_revealed(win, revealed)
 
 
-def get_card(win, pos, stacks, index, revealed):
+def get_cards(stacks, index, num):
     if stacks[index]:
-        card = stacks[index].pop(-1)
-        card.seen = True
-        return card
+        cards = []
+
+        for i in range(-num, 0):
+            cards.append(stacks[index].pop(i))
+            # card.seen = True
+        return cards
     return None
+
+def add_cards(l, to_add):
+        l.extend(to_add)
+
 
 def move_card(win, pos, card, stacks, revealed):
     blit_background(win, stacks, revealed)
 
-    win.blit(card.pic, (pos[0] - 37, pos[1] - 67))
+    win.blit(card.pic, (pos[0] - 37, pos[1] - 15))
     card.pos = pos
     card.seen = True
     pg.display.update()
     return card.pos
 
+def move_cards(win, pos, cards, stacks, revealed):
+    blit_background(win, stacks, revealed)
+
+    for i, card in enumerate(cards):
+
+        win.blit(card.pic, (pos[0] - 37, pos[1] - 15 + i*25))
+    
+    cards[0].pos = pos
+    pg.display.update()
+    return None
+
+def move(win, pos, cards, stacks, revealed):
+    if len(cards) > 1:
+        return move_cards(win, pos, cards, stacks, revealed)
+    else:
+        return move_card(win, pos, cards[0], stacks, revealed)
+
 
 def main(WIDTH, HEIGHT, WIN):
-    stacks = shuffle_deck(deck)
-    for i in range(len(stacks)):
-        
-        print(len(stacks[i]))
-    revealed = [stacks[0][0], stacks[1][1], stacks[2][2], stacks[3][3]]
+    # stacks = shuffle_deck(deck)
+    stacks = [[spades[11]],[spades[0]],[spades[1]],[spades[12]], [hearts[0]], [spades[1]], []]
+    for i in range(len(stacks) - 1):   
+        stacks[i][-1].seen = True
+    revealed = []
     blit_background(WIN, stacks, revealed)
-
     card = None
     index = None
     while True:
@@ -162,29 +201,50 @@ def main(WIDTH, HEIGHT, WIN):
 
             if pg.mouse.get_pressed()[0]:
                 mouse_position = pg.mouse.get_pos()
+                
                 try:
                     # move_card(WIN, pg.mouse.get_pos(), stacks, 1)
                     if not card:
-                        index = is_on_card(WIN, mouse_position, stacks)
+                        index, num = is_on_card_row(WIN, mouse_position, stacks)
 
-                        if index:
-                            card = get_card(WIN, mouse_position, stacks, index, revealed)
+                        if index is not None:
+                            card = get_cards(stacks, index, num)
+
                     else:
-                        move_card(WIN, mouse_position, card, stacks, revealed)
+                        move(WIN, mouse_position, card, stacks, revealed)
 
                 except AttributeError:
                     pass
             if not pg.mouse.get_pressed()[0]:
                 if card:
-                    new_index = is_on_card(WIN, card.pos, stacks)
+                    new_index, _ = is_on_card_row(WIN, card[0].pos, stacks)
                     print(new_index)
-                    if new_index:
-                        stacks[new_index].append(card)
-                        blit_background(WIN, stacks, revealed)
-                        card = None
-                        print(stacks[4])
+                    try:
+                        stack_top = stacks[new_index][-1]
+                    except Exception:
+                        stack_top = []
+
+                    if new_index is not None:
+                        
+                        if can_place_card(card[0], stack_top):
+                            if new_index != index and stacks[index]:
+                                stacks[index][-1].seen = True
+
+                            add_cards(stacks[new_index], card)
+                            blit_background(WIN, stacks, revealed)
+                            card = None
+                            print(f'Placed card in stack {index + 1}')
+                        else:
+                            add_cards(stacks[index], card)
+                            card = None
+                            blit_background(WIN, stacks, revealed)
+                            print('Cant place card there')
                     else:
-                        print('Cant drop card there')
+                        add_cards(stacks[index], card)
+                        card = None
+                        blit_background(WIN, stacks, revealed)
+                        print('Cant place card there')
+
 
 
         pg.display.update()

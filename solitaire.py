@@ -1,6 +1,7 @@
 import sys
 import pygame as pg
 import random
+import copy
 pg.init()
 BLACK = [0,0,0]
 GREEN = [25, 200, 50]
@@ -46,24 +47,26 @@ class Card:
     def __repr__(self) -> str:
         return f'{self.value} of {self.suit}\'s'
 
-spades = [Card(f'Cards\\{i}_of_spades.png', 'spade', i) for i in range(2, 11)]
-hearts = [Card(f'Cards\\{i}_of_hearts.png', 'heart', i) for i in range(2, 11)]
-diamonds = [Card(f'Cards\\{i}_of_diamonds.png', 'diamond', i) for i in range(2, 11)]
-clubs = [Card(f'Cards\\{i}_of_clubs.png', 'club', i) for i in range(2, 11)]
 pg.display.set_caption('Solitaire')
-
-for i in range(11,14):
-    spades.append(Card(f'Cards\\{list(face_card.keys())[list(face_card.values()).index(i)]}_of_spades.png', 'spade', i))
-    diamonds.append(Card(f'Cards\\{list(face_card.keys())[list(face_card.values()).index(i)]}_of_diamonds.png', 'diamond', i))
-    hearts.append(Card(f'Cards\\{list(face_card.keys())[list(face_card.values()).index(i)]}_of_hearts.png', 'heart', i))
-    clubs.append(Card(f'Cards\\{list(face_card.keys())[list(face_card.values()).index(i)]}_of_clubs.png', 'club', i))
-spades.append(Card(f'Cards\\ace_of_spades.png', 'spade', 1))
-hearts.append(Card(f'Cards\\ace_of_hearts.png', 'heart', 1))
-diamonds.append(Card(f'Cards\\ace_of_diamonds.png', 'diamond', 1))
-clubs.append(Card(f'Cards\\ace_of_clubs.png', 'club', 1))
+def get_deck():
+    spades = [Card(f'Cards\\{i}_of_spades.png', 'spade', i) for i in range(2, 11)]
+    hearts = [Card(f'Cards\\{i}_of_hearts.png', 'heart', i) for i in range(2, 11)]
+    diamonds = [Card(f'Cards\\{i}_of_diamonds.png', 'diamond', i) for i in range(2, 11)]
+    clubs = [Card(f'Cards\\{i}_of_clubs.png', 'club', i) for i in range(2, 11)]
 
 
-DECK = spades + hearts + diamonds + clubs
+    for i in range(11,14):
+        spades.append(Card(f'Cards\\{list(face_card.keys())[list(face_card.values()).index(i)]}_of_spades.png', 'spade', i))
+        diamonds.append(Card(f'Cards\\{list(face_card.keys())[list(face_card.values()).index(i)]}_of_diamonds.png', 'diamond', i))
+        hearts.append(Card(f'Cards\\{list(face_card.keys())[list(face_card.values()).index(i)]}_of_hearts.png', 'heart', i))
+        clubs.append(Card(f'Cards\\{list(face_card.keys())[list(face_card.values()).index(i)]}_of_clubs.png', 'club', i))
+    spades.append(Card(f'Cards\\ace_of_spades.png', 'spade', 1))
+    hearts.append(Card(f'Cards\\ace_of_hearts.png', 'heart', 1))
+    diamonds.append(Card(f'Cards\\ace_of_diamonds.png', 'diamond', 1))
+    clubs.append(Card(f'Cards\\ace_of_clubs.png', 'club', 1))
+
+
+    return spades + hearts + diamonds + clubs
 
 def shuffle_deck(deck):
     random.shuffle(deck)
@@ -275,17 +278,21 @@ def choose_action(pos):
         return None, None
 
 
-def main(WIDTH, HEIGHT, WIN):
-    print(len(DECK))
-    deck = DECK
+def reset():
+    deck = get_deck()
     stacks = shuffle_deck(deck)
-    # stacks = [[spades[11]],[hearts[0]],[spades[1]],[spades[12]], [hearts[2]], [spades[2]], []]
     for i in range(len(stacks) - 1):
         stacks[i][-1].seen = True
     revealed = []
     deck = stacks[-1]
     piles = [[], [], [], []]
+    global NUM_TO_FLIP
+    NUM_TO_FLIP = 3
     blit_background(WIN, stacks, revealed, deck, piles)
+    return deck, piles, revealed, stacks 
+
+def main(WIDTH, HEIGHT, WIN):
+    deck,piles,revealed,stacks = reset()
     card = []
     index = None
     flip_cards = False
@@ -333,9 +340,9 @@ def main(WIDTH, HEIGHT, WIN):
                         global NUM_TO_FLIP
                         NUM_TO_FLIP = num_to_flip
                         blit_background(WIN, stacks, revealed, deck, piles)
-                            
+                    elif action == 'reset':
+                        deck, piles, revealed, stacks = reset()
                         
-
                 except AttributeError:
                     pass
             if not pg.mouse.get_pressed()[0]:

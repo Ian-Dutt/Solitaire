@@ -1,7 +1,8 @@
 import sys
 import pygame as pg
 import random
-import copy
+import time
+
 pg.init()
 BLACK = [0,0,0]
 GREEN = [25, 200, 50]
@@ -278,6 +279,15 @@ def choose_action(pos):
         return None, None
 
 
+def win_screen(win):
+    win.fill(DARK_GREEN)
+    text = FONT.render("You have completed the game", True, BLACK)
+    tr = text.get_rect()
+    tr.center = (WIDTH // 2, HEIGHT // 2)
+    win.blit(text, tr)
+    pg.display.update()
+    time.sleep(5)
+
 def reset():
     deck = get_deck()
     stacks = shuffle_deck(deck)
@@ -290,6 +300,9 @@ def reset():
     NUM_TO_FLIP = 3
     blit_background(WIN, stacks, revealed, deck, piles)
     return deck, piles, revealed, stacks 
+
+def finished(piles):
+    return sum([len(pile) for pile in piles]) == 52
 
 def main(WIDTH, HEIGHT, WIN):
     deck,piles,revealed,stacks = reset()
@@ -397,6 +410,9 @@ def main(WIDTH, HEIGHT, WIN):
                             if stacks[index]:
                                 stacks[index][-1].seen = True  
                             add_cards(piles[new_index], card)
+                            if finished(piles):
+                                win_screen(WIN)
+                                deck, piles, revealed, stacks = reset()
                         else: 
                             add_cards(stacks[index], card)
                         # card = None

@@ -14,8 +14,8 @@ WHITE = [255,255,255]
 WIDTH = 1200
 HEIGHT = 700
 WIN = pg.display.set_mode((WIDTH, HEIGHT))
-FONT = pg.font.Font('freesansbold.ttf', 24)
-FONT_SMALL = pg.font.Font('freesansbold.ttf', 24)
+FONT = pg.font.Font('./LDFComicSansHairline.ttf', 24)
+FONT_SMALL = pg.font.Font('./LDFComicSansHairline.ttf', 24)
 RESET = FONT.render('RESET', True, WHITE, BLACK)
 
 

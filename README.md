@@ -5,3 +5,6 @@ The goal of the game is to get all the cards with the same suits into each of th
 
 ## Dependencies
 This was made on python 3.10(not sure it if works on lower verions)
+
+## How to run
+Copy the files in the dist folder to desired location and run the .exe

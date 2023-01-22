@@ -362,8 +362,11 @@ def main(WIDTH, HEIGHT, WIN):
 
                 if flip_cards:
                     if deck:
-                        for i in range(NUM_TO_FLIP):
-                            revealed.append(deck.pop(0))
+                        for _ in range(NUM_TO_FLIP):
+                            try:
+                                revealed.append(deck.pop(0))
+                            except IndexError:
+                                pass
                     else:
                         deck = revealed
                         revealed = []

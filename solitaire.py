@@ -269,7 +269,7 @@ def choose_action(pos):
         return 'revealed', None
     elif between(pos, 170, 50, 530 + CARD_WIDTH, CARD_HEIGHT + 50):
         return "piles", None
-    elif between(pos, 10, 10, RESET.get_rect().w + 11, RESET.get_rect().h):
+    elif between(pos, 10, 10, RESET.get_rect().w + 11, RESET.get_rect().h+10):
         print('reset')
         return 'reset', None
     elif between(pos, WIDTH - CARD_WIDTH - 20, 25, WIDTH - CARD_WIDTH - 20 + 81, 52):
@@ -362,10 +362,10 @@ def main(WIDTH, HEIGHT, WIN):
 
                 if flip_cards:
                     if deck:
-                        for _ in range(NUM_TO_FLIP):
+                        for i in range(NUM_TO_FLIP):
                             try:
                                 revealed.append(deck.pop(0))
-                            except IndexError:
+                            except:
                                 pass
                     else:
                         deck = revealed

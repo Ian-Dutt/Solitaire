@@ -359,7 +359,7 @@ def main(WIDTH, HEIGHT, WIN):
                 except AttributeError:
                     pass
             if not pg.mouse.get_pressed()[0]:
-
+        
                 if flip_cards:
                     if deck:
                         for i in range(NUM_TO_FLIP):
@@ -382,7 +382,8 @@ def main(WIDTH, HEIGHT, WIN):
 
                         else:
                             add_cards(piles[index], card)
-
+                    else:
+                        piles[index].append(card[0])
                     card = None
                     index = None
                     to_pile = False
